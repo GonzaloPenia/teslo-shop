@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class ProductsService {
@@ -40,16 +41,40 @@ export class ProductsService {
 
   }
 
-  async findOne(id: string) {
-  
-    const product = await this.productRepository.findOneBy({id});
-    if (!product)
-      throw new BadRequestException(`Product with id ${id} not found`);
+  async findOne(term: string) {
+    let product: Product | null;
+
+    if( isUUID(term) ){
+      product = await this.productRepository.findOneBy({id: term});
+    }else{
+      const queryBuilder = this.productRepository.createQueryBuilder();
+      product = await queryBuilder
+      .where('UPPER(title) = :title OR slug = :slug',{ 
+          title: term.toUpperCase(), 
+          slug: term.toLowerCase() })
+        .getOne();
+    }
+    if(!product){
+      throw new NotFoundException(`Product with id ${term} not found`);
+    }
     return product;
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: string, updateProductDto: UpdateProductDto) {
+
+    const product = await this.productRepository.preload({
+      id: id,
+      ...updateProductDto
+    });
+
+    if(!product) throw new NotFoundException(`Product with id ${id} not found`);
+
+    try {
+      await this.productRepository.save(product);
+      return product;
+    } catch (error) {
+      this.handleDBException(error);
+    }
   }
 
   async remove(id: string) {

@@ -35,10 +35,18 @@ export class Product {
             array: true
       })
       sizes: string[]
-
+      
       @Column('text')
-            gender: string;
+      gender: string;
+      
+      @Column('text',{
+            array: true,
+            default: []
+      })
+      tags: string[]
 
+
+      
       @BeforeInsert()
       checkSlugInsert() {      
             if (!this.slug){
@@ -51,5 +59,11 @@ export class Product {
             
       }
 
-      //@BeforeUpdate()
+      @BeforeUpdate()
+      checkSlugUpdate() {      
+            this.slug = this.slug
+                  .toLocaleLowerCase()
+                  .replaceAll('','-')
+                  .replaceAll("'",'');
+      }
 }

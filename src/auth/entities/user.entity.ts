@@ -1,9 +1,9 @@
 import { IsString } from "class-validator";
-import { Column, Entity, PrimaryColumn } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class User {
-      @PrimaryColumn('uuid')
+      @PrimaryGeneratedColumn('uuid')
       id: string;
 
       @Column('text', { unique: true })
@@ -24,5 +24,15 @@ export class User {
             default: ['user', 'admin', 'super-user']
       })
       roles: string[];
+      
 
+      @BeforeInsert()
+      checkFieldsBeforeInsert() {
+            this.email = this.email.toLowerCase().trim();
+      } 
+
+      @BeforeUpdate()
+      checkFieldsBeforeUpdate() {
+            this.checkFieldsBeforeInsert();
+      }
 }

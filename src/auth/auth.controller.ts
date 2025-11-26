@@ -56,7 +56,7 @@ export class AuthController {
     }
 
     @Get('private3')
-    @Auth()
+    @Auth(ValidRoles.admin)
 
     privateRoute3(
       @GetUser() user: User,

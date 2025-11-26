@@ -7,6 +7,7 @@ import { Product } from './entities/product.entity';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { isUUID } from 'class-validator';
 import { ProductImage } from './entities';
+import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
 export class ProductsService {
@@ -23,7 +24,7 @@ export class ProductsService {
     private readonly dataSource: DataSource,
   ) {}
   
-  async create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto, user: User) {
     
     try {
 
@@ -31,6 +32,7 @@ export class ProductsService {
 
       const product = this.productRepository.create({
         ...productDetails,
+        user,
         images: images.map(imageUrl => this.productImageRepository.create({url: imageUrl}))
       }) //Creamos el producto en memoria
       await this.productRepository.save(product) //Lo guardamos en la base de datos
@@ -88,7 +90,7 @@ export class ProductsService {
   }
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
+  async update(id: string, updateProductDto: UpdateProductDto, user: User) {
 
     const {images = [] , ...toUpdate} = updateProductDto;
 
@@ -111,6 +113,8 @@ export class ProductsService {
       }else{
         product.images = [];
       }
+      
+      product.user = user;
 
       await queryRunner.manager.save(product);
 
